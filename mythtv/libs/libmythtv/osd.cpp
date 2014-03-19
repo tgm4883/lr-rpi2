@@ -711,7 +711,7 @@ bool OSD::DrawDirect(MythPainter* painter, QSize size, bool repaint)
         painter->End();
     }
 
-    return visible;
+    return redraw;
 }
 
 QRegion OSD::Draw(MythPainter* painter, QPaintDevice *device, QSize size,

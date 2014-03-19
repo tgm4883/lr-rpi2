@@ -8,6 +8,7 @@
 
 // libmythbase headers
 #include "mythlogging.h"
+#include "mythcorecontext.h"
 
 // libmythui headers
 #include "mythfontproperties.h"
@@ -20,7 +21,9 @@ MythPainter::MythPainter()
   : m_Parent(0), m_HardwareCacheSize(0), m_SoftwareCacheSize(0),
     m_showBorders(false), m_showNames(false)
 {
-    SetMaximumCacheSizes(96, 96);
+    SetMaximumCacheSizes(
+        gCoreContext->GetNumSetting("UIPainterMaxCacheHW",64),
+        gCoreContext->GetNumSetting("UIPainterMaxCacheSW",96) );
 }
 
 void MythPainter::Teardown(void)
@@ -599,8 +602,9 @@ void MythPainter::ExpireImages(int64_t max)
 // the following assume graphics hardware operates natively at 32bpp
 void MythPainter::SetMaximumCacheSizes(int hardware, int software)
 {
-    m_MaxHardwareCacheSize = 1024 * 1024 * hardware;
-    m_MaxSoftwareCacheSize = 1024 * 1024 * software;
+    const int64_t kOneMeg = 1024 * 1024;
+    m_MaxHardwareCacheSize = kOneMeg * hardware;
+    m_MaxSoftwareCacheSize = kOneMeg * software;
 
     bool err = false;
     if (m_MaxHardwareCacheSize < 0)
@@ -610,12 +614,12 @@ void MythPainter::SetMaximumCacheSizes(int hardware, int software)
     }
     if (m_MaxSoftwareCacheSize < 0)
     {
-        m_MaxSoftwareCacheSize = 1024 * 1024 * 48;
+        m_MaxSoftwareCacheSize = kOneMeg * 48;
         err = true;
     }
 
     LOG((err) ? VB_GENERAL : VB_GUI, (err) ? LOG_ERR : LOG_INFO,
         QString("MythPainter cache sizes: Hardware %1 MB, Software %2 MB")
-        .arg(m_MaxHardwareCacheSize / (1024 * 1024))
-        .arg(m_MaxSoftwareCacheSize / (1024 * 1024)));
+        .arg(m_MaxHardwareCacheSize / kOneMeg)
+        .arg(m_MaxSoftwareCacheSize / kOneMeg));
 }

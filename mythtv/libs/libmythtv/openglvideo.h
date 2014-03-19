@@ -3,39 +3,33 @@
 
 #include <vector>
 #include <map>
-using namespace std;
+using std::vector;
+using std::map;
 
 #include <QRect>
 
 #include "videooutbase.h"
 #include "videoouttypes.h"
 #include "mythrender_opengl.h"
-
-enum OpenGLFilterType
-{
-    kGLFilterNone = 0,
-
-    // Conversion filters
-    kGLFilterYUV2RGB,
-
-    // Frame scaling/resizing filters
-    kGLFilterResize,
-    kGLFilterBicubic,
-};
-
-enum DisplayBuffer
-{
-    kDefaultBuffer,
-    kFrameBufferObject
-};
+#include "util-opengl.h"
 
 class OpenGLFilter;
-typedef map<OpenGLFilterType,OpenGLFilter*> glfilt_map_t;
-
-#include "util-opengl.h"
 
 class OpenGLVideo
 {
+    enum OpenGLFilterType
+    {
+        kGLFilterNone = 0,
+
+        // Conversion filters
+        kGLFilterYUV2RGB,
+        kGLFilterYV12RGB,
+
+        // Frame scaling/resizing filters
+        kGLFilterResize,
+        kGLFilterBicubic,
+    };
+
   public:
     OpenGLVideo();
    ~OpenGLVideo();
@@ -121,6 +115,7 @@ class OpenGLVideo
     vector<GLuint>   referenceTextures;
     vector<GLuint>   inputTextures;
     QSize          inputTextureSize;
+    typedef map<OpenGLFilterType,OpenGLFilter*> glfilt_map_t;
     glfilt_map_t   filters;
     long long      currentFrameNum;
     bool           inputUpdated;

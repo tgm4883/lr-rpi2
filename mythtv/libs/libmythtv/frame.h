@@ -211,16 +211,14 @@ static inline void copy(VideoFrame *dst, const VideoFrame *src)
 
     if (FMT_YV12 == codec)
     {
-        int width   = src->width;
-        int height  = src->height;
-        int dwidth  = dst->width;
-        int dheight = dst->height;
-
-        if (height == dheight && width == dwidth &&
-            dst->pitches[0] != src->pitches[0])
+        if (dst->pitches[0] != src->pitches[0] ||
+            dst->pitches[1] != src->pitches[1] ||
+            dst->pitches[2] != src->pitches[2] )
         {
             // We have a different stride between the two frames
             // drop the garbage data
+            int height = (dst->height < src->height) ? dst->height : src->height;
+            int width = (dst->width < src->width) ? dst->width : src->width;
             copyplane(dst->buf + dst->offsets[0], dst->pitches[0],
                       src->buf + src->offsets[0], src->pitches[0],
                       width, height);

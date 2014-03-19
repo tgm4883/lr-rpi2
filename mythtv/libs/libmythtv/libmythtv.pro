@@ -329,6 +329,17 @@ using_frontend {
         LIBS += -lcrystalhd
     }
 
+    using_openmax {
+        DEFINES += USING_OPENMAX OMX_SKIP64BIT USING_BROADCOM
+        HEADERS += omxcontext.h
+        SOURCES += omxcontext.cpp
+        HEADERS += privatedecoder_omx.h
+        SOURCES += privatedecoder_omx.cpp
+        HEADERS += videoout_omx.h
+        SOURCES += videoout_omx.cpp
+        LIBS += -lopenmaxil
+    }
+
     using_libass {
         DEFINES += USING_LIBASS
         LIBS    += -lass
@@ -421,6 +432,7 @@ using_frontend {
         DEFINES += USING_OPENGL
         HEADERS += util-opengl.h
         SOURCES += util-opengl.cpp
+        using_opengles: DEFINES += USING_OPENGLES
         QT += opengl
     }
 

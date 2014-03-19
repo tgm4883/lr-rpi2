@@ -3185,6 +3185,7 @@ void MythPlayer::DecoderStart(bool start_paused)
     }
 
     killdecoder = false;
+    decoderPaused = start_paused;
     decoderThread = new DecoderThread(this, start_paused);
     if (decoderThread)
         decoderThread->start();

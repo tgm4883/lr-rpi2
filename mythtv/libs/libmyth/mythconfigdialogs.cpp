@@ -5,6 +5,7 @@
 
 #include "mythuihelper.h"
 
+#include <QApplication>
 #include <QWidget>
 #include <QHBoxLayout>
 
@@ -133,6 +134,11 @@ MythDialog *ConfigurationWizard::dialogWidget(MythMainWindow *parent,
     QObject::connect(cfgGrp, SIGNAL(changeHelpText(QString)),
                      wizard, SLOT(  setHelpText(   QString)));
 
+    QWidget *widget = parent;
+#if QT_VERSION >= QT_VERSION_CHECK(5,0,0)
+    if (qApp->platformName().contains("egl"))
+        widget = wizard;
+#endif
     QWidget *child = NULL;
     ChildList::iterator it = cfgChildren.begin();
     for (; it != cfgChildren.end(); ++it)
@@ -140,7 +146,7 @@ MythDialog *ConfigurationWizard::dialogWidget(MythMainWindow *parent,
         if (!(*it)->isVisible())
             continue;
 
-        child = (*it)->configWidget(cfgGrp, parent);
+        child = (*it)->configWidget(cfgGrp, widget);
         wizard->addPage(child, (*it)->getLabel());
     }
 

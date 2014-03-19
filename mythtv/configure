@@ -132,6 +132,7 @@ Advanced options (experts only):
   --disable-vdpau          disable NVidia VDPAU hardware acceleration.
   --disable-crystalhd      disable Broadcom CrystalHD hardware decoder support
   --disable-vaapi          disable VAAPI hardware accelerated video decoding
+  --disable-openmax        disable OpenMAX hardware accelerated video decoding
   --disable-dxva2          disable hardware accelerated decoding on windows
   --disable-opengl-video   disable OpenGL based video display
   --disable-quartz-video   disable Mac OS X CoreVideo based video display
@@ -1440,6 +1441,7 @@ HWACCEL_LIST="
     vaapi
     vda
     vdpau
+    openmax
 "
 
 LIBRARY_LIST="
@@ -1862,6 +1864,7 @@ USING_LIST='
     opengles
     vaapi
     vdpau
+    openmax
 '
 
 CMDLINE_SELECT="
@@ -2647,10 +2650,10 @@ enable taglib
 enable mythlogserver
 
 # mythtv paths
-dvb_path_default="${sysroot}/usr/include"
-x11_path_default="${sysroot}/usr/X11R6/include"
-libcec_path_default="${sysroot}/usr/include"
-libxml2_path_default="${sysroot}/usr/include/libxml2"
+dvb_path_default="$sysinclude"
+x11_path_default="${sysinclude}/X11"
+libcec_path_default="$sysinclude"
+libxml2_path_default="${sysinclude}/libxml2"
 firewiresdk_path_default=""
 
 # build settings
@@ -4468,15 +4471,15 @@ is_qmake4(){
     $1 --version 2>&1 | egrep -q -e "Qt version 4\.[8-9]\.[0-9]"
 }
 
-if is_qmake4 $qmake || is_qmake4 qmake-qt4; then
-    if is_qmake4 qmake-qt4; then
-        qmake=qmake-qt4
-    fi
-elif is_qmake5 $qmake || is_qmake5 qmake-qt5; then
-    if is_qmake5 qmake-qt5; then
-        qmake=qmake-qt5
-    fi
+if is_qmake5 $qmake; then
     check_cxxflags -DQT_DISABLE_DEPRECATED_BEFORE
+elif is_qmake4 $qmake; then
+    :
+elif is_qmake5 qmake-qt5; then
+    qmake=qmake-qt5
+    check_cxxflags -DQT_DISABLE_DEPRECATED_BEFORE
+elif is_qmake4 qmake-qt4; then
+    qmake=qmake-qt4
 else
     die "qmake for Qt4.8 or newer not found.\nPlease specify the correct qmake with --qmake="
 fi
@@ -4910,6 +4913,12 @@ if ! disabled vda && ! enabled ppc; then
     check_header VideoDecodeAcceleration/VDADecoder.h && enable vda
 fi
 
+# check for OpenMAX header & lib
+if ! disabled openmax; then
+    check_header 'IL/OMX_Core.h' && enable openmax
+fi
+disabled openmax || check_lib 'IL/OMX_Core.h' OMX_Init -lopenmaxil || disable openmax
+
 #End MythTV check
 
 if ! disabled w32threads && ! enabled pthreads; then
@@ -4952,6 +4961,7 @@ if enabled pthreads; then
 fi
 
 # Check for libuuid for zeromq
+enabled mythlogserver || disable libuuid
 if enabled libuuid ; then
   check_lib uuid/uuid.h uuid_generate -luuid || disable libuuid
   if disabled libuuid ; then
@@ -5342,6 +5352,7 @@ check_optflags -fno-signed-zeros
 enabled ftrapv && check_cflags -ftrapv
 
 if enabled dvb; then
+    [ -d "$dvb_path" ] || dvb_path="${sysroot}/usr/include"
     if test -f "$dvb_path"/linux/dvb/frontend.h ; then
         if test -f "$dvb_path"/../MAINTAINERS ; then
             echo "Warning: DVB location in kernel. May not compile."
@@ -5350,6 +5361,8 @@ if enabled dvb; then
         KERNEL_RELEASE=`uname -r 2>/dev/null`
         if test x"$KERNEL_RELEASE" != x"" ; then
             dvb_path="${sysroot}/usr/src/linux-$KERNEL_RELEASE/include"
+            [ -d "$dvb_path" ] ||\
+                dvb_path="${sysroot}/usr/src/linux-headers-$KERNEL_RELEASE/include/uapi"
         else
             dvb_path="${sysroot}/usr/src/linux/include"
         fi
@@ -5394,7 +5407,7 @@ else
     qt_libs="-L${sysroot}/$(${qmake} -query QT_INSTALL_LIBS)"
 fi
 
-if $(pkg-config --exists QtWebKit) ; then
+if $(pkg-config --exists QtWebKit) || $(pkg-config --exists Qt5WebKit) ; then
     enable qtwebkit
 else
     check_ecxx ${qt_inc} ${qt_inc}/QtCore <<EOF && enable qtwebkit
@@ -5405,7 +5418,7 @@ fi
 
 enabled qtwebkit || die "Error! QtWebkit headers not found"
 
-if $(pkg-config --exists QtScript) ; then
+if $(pkg-config --exists QtScript) || $(pkg-config --exists Qt5Script) ; then
     enable qtscript
 else
     check_ecxx ${qt_inc} <<EOF && enable qtscript
@@ -5434,8 +5447,8 @@ EOF
 fi
 
 # Disable OpenGL ES support if Qt does not support it
-QTGL=$(pkg-config --list-all | grep Qt | grep OpenGL | awk '{print $1}')
-if $(pkg-config --variable=qt_config $QTGL | grep -qv opengles2) ; then
+QTCONF=$(pkg-config --variable=qt_config QtCore || pkg-config --variable=qt_config Qt5Core)
+if echo "$QTCONF" | grep -qv opengles2 ; then
     disable opengles
 fi
 
@@ -6000,6 +6013,7 @@ if enabled x11 ; then
   echo "VDPAU support             ${vdpau-no}"
   echo "VAAPI support             ${vaapi-no}"
   echo "CrystalHD support         ${crystalhd-no}"
+  echo "OpenMAX support           ${openmax-no}"
 fi
   echo "OpenGL video              ${opengl_video-no}"
   if test x"$target_os" = x"darwin" ; then
