@@ -1077,9 +1077,6 @@ bool MythUIImage::Load(bool allowLoadInBackground, bool forceStat)
                 do_background_load = true;
         }
 
-        if (!isAnimation && !GetMythUI()->IsImageInCache(imagelabel))
-            Clear();
-
         if (do_background_load)
         {
             SetMinArea(MythRect());
@@ -1096,6 +1093,9 @@ bool MythUIImage::Load(bool allowLoadInBackground, bool forceStat)
         }
         else
         {
+            if (!isAnimation && !GetMythUI()->IsImageInCache(imagelabel))
+                Clear();
+
             // Perform a blocking load
             LOG(VB_GUI | VB_FILE, LOG_DEBUG, LOC +
                 QString("Load(), loading '%1' in foreground").arg(filename));
@@ -1222,9 +1222,10 @@ void MythUIImage::Pulse(void)
             }
 
             m_ImagesLock.unlock();
+
+            SetRedraw();
         }
 
-        SetRedraw();
         m_LastDisplay = QTime::currentTime();
     }
 
